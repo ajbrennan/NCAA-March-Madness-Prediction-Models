@@ -1,0 +1,583 @@
+```{r}
+library(dplyr)
+library(rpart)
+```
+
+1st round
+```{r}
+a <- read.csv("./Data-1st-rd.csv", header = TRUE)
+
+a$Top <- as.character(a$Top)
+a$Bottom <- as.character(a$Bottom)
+a$T1 <- as.numeric(aaa$Tseed == 1)
+a$T2 <- as.numeric(aaa$Tseed == 2)
+a$T3 <- as.numeric(aaa$Tseed == 3)
+a$T4 <- as.numeric(aaa$Tseed == 4)
+a$T5 <- as.numeric(aaa$Tseed == 5)
+a$T6 <- as.numeric(aaa$Tseed == 6)
+a$T7 <- as.numeric(aaa$Tseed == 7)
+a$T8 <- as.numeric(aaa$Tseed == 8)
+a$TopBot <- 2
+a$WinSeed <- 0
+a$Winner <- ""
+a$LoseSeed <- 0
+a$Loser <- ""
+a$safety <- ""
+
+aa <- a[c(1:192),]
+
+fit <- rpart(Win~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o
+             +Tken_n+Bken_n+Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150
+             +Tl150+Bl150+Tstr+Bstr+This+Bhis+T1+T2+T3+T4+T5+T6+T7+T8, method="class", data=aa)
+
+#plot(fit, uniform=TRUE)
+#text(fit, use.n=TRUE, all=TRUE, cex=.8)
+
+for(i in c(1:224)){
+  #4-3 || risky win #4-7
+  if(a$Bhis[i] > 128.2665 & a$Brpi[i] < .5739){
+    a$TopBot[i] <- 1
+    a$safety[i] <- "risky"
+  }
+  #58-2 || safe win #1-3
+  if(a$Bhis[i] < 128.2665 & a$Brpi[i] < .54845){
+    a$TopBot[i] <- 1
+    a$safety[i] <- "safe"
+  }
+  #31-4 || decent win #3-7
+  if(a$Bhis[i] < 128.2665 & a$Brpi[i] > .54845 & a$Tken_n[i] > 20.24){
+    a$TopBot[i] <- 1
+    a$safety[i] <- "decent"
+  }
+  #6-3 || cautious win #7-8 || risky with #8
+  if(a$Bhis[i] < 128.2665 & a$Brpi[i] > .54845 & a$Tken_n[i] < 20.24 & a$Tken_o[i] < .7959 & a$Bw50[i] > 3.5){
+    a$TopBot[i] <- 1
+    a$safety[i] <- "cautious"
+    if(a$Tseed[i] == 8)
+      a$safety[i] <- "risky"
+  }
+  #26-3 || decent win #5-8
+  if(a$Bhis[i] < 128.2665 & a$Brpi[i] > .54845 & a$Tken_n[i] < 20.24 & a$Tken_o[i] > .7959 & a$Bcon[i] > .5031){
+    a$TopBot[i] <- 1
+    a$safety[i] <- "decent"
+  }
+  #8-1 || safe win #4
+  if(a$Bhis[i] < 128.2665 & a$Brpi[i] > .54845 & a$Tken_n[i] < 20.24 & a$Tken_o[i] > .7959 & a$Bcon[i] < .5031 & a$T4[i] > .5){
+    a$TopBot[i] <- 1
+    a$safety[i] <- "safe"
+  }
+  ##################################################################################################
+  #13-0 || safe upset #5-8
+  if(a$Bhis[i] > 128.2665 & a$Brpi[i] > .5739){
+    a$TopBot[i] <- 0
+    a$safety[i] <- "safe"
+  }
+  #15-3 || decent upset #4-8 || risky with #6
+  if(a$Bhis[i] < 128.2665 & a$Brpi[i] > .54845 & a$Tken_n[i] < 20.24 & a$Tken_o[i] < .7959 & a$Bw50[i] < 3.5){
+    a$TopBot[i] <- 0
+    a$safety[i] <- "decent"
+    if(a$Tseed[i] == 6)
+      a$safety[i] <- "risky"
+  }
+  #9-3 || decent upset #3,5 || risky #5
+  if(a$Bhis[i] < 128.2665 & a$Brpi[i] > .54845 & a$Tken_n[i] < 20.24 & a$Tken_o[i] > .7959 & a$Bcon[i] < .5031 & a$T4[i] < .5){
+    a$TopBot[i] <- 0
+    a$safety[i] <- "decent"
+    if(a$Tseed[i] == 5)
+      a$safety[i] <- "risky"
+  }
+  ##################################################################################################
+  if(a$TopBot[i] == 1){
+    a$WinSeed[i] <- a$Tseed[i]
+    a$Winner[i] <- as.character(a$Top[i])
+    a$LoseSeed[i] <- a$Bseed[i]
+    a$Loser[i] <- as.character(a$Bottom[i])
+  }
+  if(a$TopBot[i] == 0){
+    a$WinSeed[i] <- a$Bseed[i]
+    a$Winner[i] <- as.character(a$Bottom[i])
+    a$LoseSeed[i] <- a$Tseed[i]
+    a$Loser[i] <- as.character(a$Top[i])
+  }
+}
+
+first <- a[c(193:224),]
+cat(sprintf("\n%8s  ||  #%2i %19s  ||  #%2i %19s", first$safety,first$WinSeed,first$Winner,first$LoseSeed,first$Loser))
+```
+
+
+2nd round
+```{r}
+c <- read.csv("./Data-2nd-rd.csv", header = TRUE)
+
+c$Top <- as.character(c$Top)
+c$Bottom <- as.character(c$Bottom)
+c$TopBot <- 2
+c$WinSeed <- 0
+c$Winner <- ""
+c$LoseSeed <- 0
+c$Loser <- ""
+c$safety <- ""
+
+for(i in seq(from=1, to=31, by=2)){
+  if(first$TopBot[i] == 1){
+    #c$Top[((i+1)/2)+96] <- first$Top[i]
+    c[((i+1)/2)+96,seq(from=4, to=50, by=2)] <- first[i,seq(from=4, to=50, by=2)]
+  }
+  if(first$TopBot[i] == 0){
+    c[((i+1)/2)+96,seq(from=4, to=50, by=2)] <- first[i,seq(from=5, to=51, by=2)]
+  }
+}
+for(i in seq(from=2, to=32, by=2)){
+  if(first$TopBot[i] == 1){
+    c[(i/2)+96,seq(from=5, to=51, by=2)] <- first[i,seq(from=4, to=50, by=2)]
+  }
+  if(first$TopBot[i] == 0){
+    c[(i/2)+96,seq(from=5, to=51, by=2)] <- first[i,seq(from=5, to=51, by=2)]
+  }
+}
+
+cc <- c[c(1:96),]
+
+fit2 <- rpart(Win~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o
+              +Bken_o+Tken_n+Bken_n+Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50
+              +Tw150+Bw150+Tl150+Bl150+Tstr+Bstr+This+Bhis, method="class", data=cc)
+
+#plot(fit2, uniform=TRUE)
+#text(fit2, use.n=TRUE, all=TRUE, cex=.8)
+
+for(i in c(1:112)){
+  #11-2 || decent win #1 upset #2-4
+  if(c$Boff[i] > 113.55 & c$Tsos[i] > .58135){
+    c$TopBot[i] <- 1
+    c$safety[i] <- "decent"
+  }
+  #28-1 || safe win #1,5-12 upset #2-4
+  if(c$Boff[i] < 113.55 & c$Tsos[i] > .5458){
+    c$TopBot[i] <- 1
+    c$safety[i] <- "safe"
+  }
+  ##################################################################################################
+  #38-7 || decent win #2-4 upset #1 || catious 2v7, 3v11
+  if(c$Boff[i] > 113.55 & c$Tsos[i] < .58135){
+    c$TopBot[i] <- 0
+    c$safety[i] <- "decent"
+    if((c$Tseed[i] == 2 & c$Bseed[i] == 7) | (c$Tseed[i] == 3 & c$Bseed[i] == 11))
+      c$safety[i] <- "cautious"
+  }
+  #7-2 for 0 || decent win #3-4 || risky 1v8, 2v7
+  if(c$Boff[i] < 113.55 & c$Tsos[i] < .5458){
+    c$TopBot[i] <- 0
+    c$safety[i] <- "decent"
+    if((c$Tseed[i] == 1 & c$Bseed[i] == 8) | (c$Tseed[i] == 2 & c$Bseed[i] == 7))
+      c$safety[i] <- "risky"
+  }
+  ##################################################################################################
+  if(c$TopBot[i] == 1){
+    c$WinSeed[i] <- c$Tseed[i]
+    c$Winner[i] <- as.character(c$Top[i])
+    c$LoseSeed[i] <- c$Bseed[i]
+    c$Loser[i] <- as.character(c$Bottom[i])
+  }
+  if(c$TopBot[i] == 0){
+    c$WinSeed[i] <- c$Bseed[i]
+    c$Winner[i] <- as.character(c$Bottom[i])
+    c$LoseSeed[i] <- c$Tseed[i]
+    c$Loser[i] <- as.character(c$Top[i])
+  }
+}
+
+second <- c[c(97:112),]
+cat(sprintf("\n%8s  ||  #%2i %19s  ||  #%2i %19s", second$safety,second$WinSeed,second$Winner,second$LoseSeed,second$Loser))
+```
+
+
+Sweet 16
+```{r}
+c <- read.csv("./Data-2nd-rd.csv", header = TRUE)
+e <- read.csv("./Data-s16.csv", header = TRUE)
+f <- rbind(c,e)
+
+e$Top <- as.character(e$Top)
+e$Bottom <- as.character(e$Bottom)
+e$TopBot <- 2
+e$WinSeed <- 0
+e$Winner <- ""
+e$LoseSeed <- 0
+e$Loser <- ""
+e$safety <- ""
+
+for(i in seq(from=1, to=15, by=2)){
+  if(second$TopBot[i] == 1){
+    #c$Top[((i+1)/2)+96] <- first$Top[i]
+    e[((i+1)/2)+48,seq(from=4, to=50, by=2)] <- second[i,seq(from=4, to=50, by=2)]
+  }
+  if(second$TopBot[i] == 0){
+    e[((i+1)/2)+48,seq(from=4, to=50, by=2)] <- second[i,seq(from=5, to=51, by=2)]
+  }
+}
+for(i in seq(from=2, to=16, by=2)){
+  if(second$TopBot[i] == 1){
+    e[(i/2)+48,seq(from=5, to=51, by=2)] <- second[i,seq(from=4, to=50, by=2)]
+  }
+  if(second$TopBot[i] == 0){
+    e[(i/2)+48,seq(from=5, to=51, by=2)] <- second[i,seq(from=5, to=51, by=2)]
+  }
+}
+
+ff <- f[c(1:96,113:160),]
+
+fit4 <- rpart(Win~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o
+              +Bken_o+Tken_n+Bken_n+Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50
+              +Tw150+Bw150+Tl150+Bl150+Tstr+Bstr+This+Bhis, method="class", data=ff)
+
+#plot(fit4, uniform=TRUE)
+#text(fit4, use.n=TRUE, all=TRUE, cex=.8)
+
+for(i in c(1:56)){
+  if(e$Trpi[i] > .6377){
+    e$TopBot[i] <- 1
+    e$safety[i] <- "safe"
+  }
+  if(e$Trpi[i] < .6377 & e$Bcon[i] < .5211){
+    e$TopBot[i] <- 1
+    e$safety[i] <- "decent"
+  }
+  if(e$Trpi[i] < .6377 & e$Bcon[i] > .5211 & e$Bw50[i] > 10.5){
+    e$TopBot[i] <- 1
+    e$safety[i] <- "cautious"
+  }
+  if(e$Trpi[i] < .6377 & e$Bcon[i] > .5211 & e$Bw50[i] < 10.5 & e$Bstr[i] < 7.5){
+    e$TopBot[i] <- 1
+    e$safety[i] <- "cautious"
+  }
+  if(e$Trpi[i] < .6377 & e$Bcon[i] > .5211 & e$Bw50[i] < 10.5 & e$Bstr[i] > 7.5 & e$Tsos[i] > .5526 & e$Bsos[i] < .5766 & e$Twin[i] > 22.5){
+    e$TopBot[i] <- 1
+    e$safety[i] <- "risky"
+  }
+  ##################################################################################################
+  if(e$Trpi[i] < .6377 & e$Bcon[i] > .5211 & e$Bw50[i] < 10.5 & e$Bstr[i] > 7.5 & e$Tsos[i] < .5526){
+    e$TopBot[i] <- 0
+    e$safety[i] <- "decent"
+  }
+  if(e$Trpi[i] < .6377 & e$Bcon[i] > .5211 & e$Bw50[i] < 10.5 & e$Bstr[i] > 7.5 & e$Tsos[i] > .5526 & e$Bsos[i] > .5766){
+    e$TopBot[i] <- 0
+    e$safety[i] <- "safe"
+  }
+  if(e$Trpi[i] < .6377 & e$Bcon[i] > .5211 & e$Bw50[i] < 10.5 & e$Bstr[i] > 7.5 & e$Tsos[i] > .5526 & e$Bsos[i] < .5766 & e$Twin[i] < 22.5){
+    e$TopBot[i] <- 0
+    e$safety[i] <- "decent"
+  }
+  ##################################################################################################
+  if(e$TopBot[i] == 1){
+    e$WinSeed[i] <- e$Tseed[i]
+    e$Winner[i] <- as.character(e$Top[i])
+    e$LoseSeed[i] <- e$Bseed[i]
+    e$Loser[i] <- as.character(e$Bottom[i])
+  }
+  if(e$TopBot[i] == 0){
+    e$WinSeed[i] <- e$Bseed[i]
+    e$Winner[i] <- as.character(e$Bottom[i])
+    e$LoseSeed[i] <- e$Tseed[i]
+    e$Loser[i] <- as.character(e$Top[i])
+  }
+}
+
+s16 <- e[c(49:56),]
+cat(sprintf("\n%8s  ||  #%2i %19s  ||  #%2i %19s", s16$safety,s16$WinSeed,s16$Winner,s16$LoseSeed,s16$Loser))
+```
+
+
+Elite 8
+```{r}
+c <- read.csv("./Data-2nd-rd.csv", header = TRUE)
+e <- read.csv("./Data-s16.csv", header = TRUE)
+g <- read.csv("./Data-final.csv", header = TRUE)
+k <- rbind(c,e,g)
+
+g$Top <- as.character(g$Top)
+g$Bottom <- as.character(g$Bottom)
+g$TopBot <- 2
+g$WinSeed <- 0
+g$Winner <- ""
+g$LoseSeed <- 0
+g$Loser <- ""
+g$safety <- ""
+
+for(i in seq(from=1, to=7, by=2)){
+  if(s16$TopBot[i] == 1){
+    #c$Top[((i+1)/2)+96] <- first$Top[i]
+    g[((i+1)/2)+24,seq(from=4, to=50, by=2)] <- s16[i,seq(from=4, to=50, by=2)]
+  }
+  if(s16$TopBot[i] == 0){
+    g[((i+1)/2)+24,seq(from=4, to=50, by=2)] <- s16[i,seq(from=5, to=51, by=2)]
+  }
+}
+for(i in seq(from=2, to=8, by=2)){
+  if(s16$TopBot[i] == 1){
+    g[(i/2)+24,seq(from=5, to=51, by=2)] <- s16[i,seq(from=4, to=50, by=2)]
+  }
+  if(s16$TopBot[i] == 0){
+    g[(i/2)+24,seq(from=5, to=51, by=2)] <- s16[i,seq(from=5, to=51, by=2)]
+  }
+}
+
+kk <- k[c(1:96,113:160,169:192,197:208,211:216),]
+
+fit6 <- rpart(Win~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o
+              +Bken_o+Tken_n+Bken_n+Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50
+              +Tw150+Bw150+Tl150+Bl150+Tstr+Bstr+This+Bhis, method="class", data=kk)
+
+#plot(fit6, uniform=TRUE)
+#text(fit6, use.n=TRUE, all=TRUE, cex=.8)
+
+for(i in c(1:49)){
+  if(g$Brpi[i] < .6067 & g$Tw50[i] > 3.5 & g$Bdef[i] > 92.3){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "decent"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] > 120.85){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "decent"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] < .5767 & g$Bsos[i] > .5937){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "risky"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] < .5767 & g$Bsos[i] < .5937 & g$Bhis[i] < 61.4635){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "risky"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] > .5767 & g$Bsos[i] < .5637){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "cautious"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] > .5767 & g$Bsos[i] > .5637 & g$Bw50[i] > 7.5){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "risky"
+  }
+  ##################################################################################################
+  if(g$Brpi[i] < .6067 & g$Tw50[i] < 3.5){
+    g$TopBot[i] <- 0
+    g$safety[i] <- "cautious"
+  }
+  if(g$Brpi[i] < .6067 & g$Tw50[i] > 3.5 & g$Bdef[i] < 92.3){
+    g$TopBot[i] <- 0
+    g$safety[i] <- "cautious"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] < .5767 & g$Bsos[i] < .5937 & g$Bhis[i] > 61.4635){
+    g$TopBot[i] <- 0
+    g$safety[i] <- "safe"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] > .5767 & g$Bsos[i] > .5637 & g$Bw50[i] < 7.5){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "decent"
+  }
+  ##################################################################################################
+  if(g$TopBot[i] == 1){
+    g$WinSeed[i] <- g$Tseed[i]
+    g$Winner[i] <- as.character(g$Top[i])
+    g$LoseSeed[i] <- g$Bseed[i]
+    g$Loser[i] <- as.character(g$Bottom[i])
+  }
+  if(g$TopBot[i] == 0){
+    g$WinSeed[i] <- g$Bseed[i]
+    g$Winner[i] <- as.character(g$Bottom[i])
+    g$LoseSeed[i] <- g$Tseed[i]
+    g$Loser[i] <- as.character(g$Top[i])
+  }
+}
+
+e8 <- g[c(25:28),]
+cat(sprintf("\n%8s  ||  #%2i %19s  ||  #%2i %19s", e8$safety,e8$WinSeed,e8$Winner,e8$LoseSeed,e8$Loser))
+```
+
+
+Final 4
+```{r}
+for(i in c(1,3)){
+  if(e8$TopBot[i] == 1){
+    #c$Top[((i+1)/2)+96] <- first$Top[i]
+    g[((i+1)/2)+40,seq(from=4, to=50, by=2)] <- e8[i,seq(from=4, to=50, by=2)]
+  }
+  if(e8$TopBot[i] == 0){
+    g[((i+1)/2)+40,seq(from=4, to=50, by=2)] <- e8[i,seq(from=5, to=51, by=2)]
+  }
+}
+for(i in c(2,4)){
+  if(e8$TopBot[i] == 1){
+    g[(i/2)+40,seq(from=5, to=51, by=2)] <- e8[i,seq(from=4, to=50, by=2)]
+  }
+  if(e8$TopBot[i] == 0){
+    g[(i/2)+40,seq(from=5, to=51, by=2)] <- e8[i,seq(from=5, to=51, by=2)]
+  }
+}
+
+for(i in c(1:49)){
+  if(g$Brpi[i] < .6067 & g$Tw50[i] > 3.5 & g$Bdef[i] > 92.3){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "decent"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] > 120.85){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "decent"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] < .5767 & g$Bsos[i] > .5937){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "risky"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] < .5767 & g$Bsos[i] < .5937 & g$Bhis[i] < 61.4635){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "risky"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] > .5767 & g$Bsos[i] < .5637){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "cautious"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] > .5767 & g$Bsos[i] > .5637 & g$Bw50[i] > 7.5){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "risky"
+  }
+  ##################################################################################################
+  if(g$Brpi[i] < .6067 & g$Tw50[i] < 3.5){
+    g$TopBot[i] <- 0
+    g$safety[i] <- "cautious"
+  }
+  if(g$Brpi[i] < .6067 & g$Tw50[i] > 3.5 & g$Bdef[i] < 92.3){
+    g$TopBot[i] <- 0
+    g$safety[i] <- "cautious"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] < .5767 & g$Bsos[i] < .5937 & g$Bhis[i] > 61.4635){
+    g$TopBot[i] <- 0
+    g$safety[i] <- "safe"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] > .5767 & g$Bsos[i] > .5637 & g$Bw50[i] < 7.5){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "decent"
+  }
+  ##################################################################################################
+  if(g$TopBot[i] == 1){
+    g$WinSeed[i] <- g$Tseed[i]
+    g$Winner[i] <- as.character(g$Top[i])
+    g$LoseSeed[i] <- g$Bseed[i]
+    g$Loser[i] <- as.character(g$Bottom[i])
+  }
+  if(g$TopBot[i] == 0){
+    g$WinSeed[i] <- g$Bseed[i]
+    g$Winner[i] <- as.character(g$Bottom[i])
+    g$LoseSeed[i] <- g$Tseed[i]
+    g$Loser[i] <- as.character(g$Top[i])
+  }
+}
+
+f4 <- g[c(41:42),]
+cat(sprintf("\n%8s  ||  #%2i %19s  ||  #%2i %19s", f4$safety,f4$WinSeed,f4$Winner,f4$LoseSeed,f4$Loser))
+```
+
+
+Championship
+```{r}
+if(f4$TopBot[1] == 1){
+  #c$Top[((i+1)/2)+96] <- first$Top[i]
+  g[49,seq(from=4, to=50, by=2)] <- f4[1,seq(from=4, to=50, by=2)]
+}
+if(f4$TopBot[1] == 0){
+  g[49,seq(from=4, to=50, by=2)] <- f4[1,seq(from=5, to=51, by=2)]
+}
+if(f4$TopBot[2] == 1){
+  g[49,seq(from=5, to=51, by=2)] <- f4[2,seq(from=4, to=50, by=2)]
+}
+if(f4$TopBot[2] == 0){
+  g[49,seq(from=5, to=51, by=2)] <- f4[2,seq(from=5, to=51, by=2)]
+}
+
+for(i in c(1:49)){
+  if(g$Brpi[i] < .6067 & g$Tw50[i] > 3.5 & g$Bdef[i] > 92.3){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "decent"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] > 120.85){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "decent"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] < .5767 & g$Bsos[i] > .5937){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "risky"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] < .5767 & g$Bsos[i] < .5937 & g$Bhis[i] < 61.4635){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "risky"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] > .5767 & g$Bsos[i] < .5637){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "cautious"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] > .5767 & g$Bsos[i] > .5637 & g$Bw50[i] > 7.5){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "risky"
+  }
+  ##################################################################################################
+  if(g$Brpi[i] < .6067 & g$Tw50[i] < 3.5){
+    g$TopBot[i] <- 0
+    g$safety[i] <- "cautious"
+  }
+  if(g$Brpi[i] < .6067 & g$Tw50[i] > 3.5 & g$Bdef[i] < 92.3){
+    g$TopBot[i] <- 0
+    g$safety[i] <- "cautious"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] < .5767 & g$Bsos[i] < .5937 & g$Bhis[i] > 61.4635){
+    g$TopBot[i] <- 0
+    g$safety[i] <- "safe"
+  }
+  if(g$Brpi[i] > .6067 & g$Toff[i] < 120.85 & g$Tsos[i] > .5767 & g$Bsos[i] > .5637 & g$Bw50[i] < 7.5){
+    g$TopBot[i] <- 1
+    g$safety[i] <- "decent"
+  }
+  ##################################################################################################
+  if(g$TopBot[i] == 1){
+    g$WinSeed[i] <- g$Tseed[i]
+    g$Winner[i] <- as.character(g$Top[i])
+    g$LoseSeed[i] <- g$Bseed[i]
+    g$Loser[i] <- as.character(g$Bottom[i])
+  }
+  if(g$TopBot[i] == 0){
+    g$WinSeed[i] <- g$Bseed[i]
+    g$Winner[i] <- as.character(g$Bottom[i])
+    g$LoseSeed[i] <- g$Tseed[i]
+    g$Loser[i] <- as.character(g$Top[i])
+  }
+}
+
+champ <- g[49,]
+cat(sprintf("\n%8s  ||  #%2i %19s  ||  #%2i %19s", champ$safety,champ$WinSeed,champ$Winner,champ$LoseSeed,champ$Loser))
+```
+
+
+Results
+```{r}
+cat(sprintf("First Round"))
+cat(sprintf("\n%8s  ||  #%2i %19s  ||  #%2i %19s", first$safety,first$WinSeed,first$Winner,first$LoseSeed,first$Loser))
+
+cat(sprintf("\n\nSecond Round"))
+cat(sprintf("\n%8s  ||  #%2i %19s  ||  #%2i %19s", second$safety,second$WinSeed,second$Winner,second$LoseSeed,second$Loser))
+
+cat(sprintf("\n\nSweet 16"))
+cat(sprintf("\n%8s  ||  #%2i %19s  ||  #%2i %19s", s16$safety,s16$WinSeed,s16$Winner,s16$LoseSeed,s16$Loser))
+
+cat(sprintf("\n\nElite 8"))
+cat(sprintf("\n%8s  ||  #%2i %19s  ||  #%2i %19s", e8$safety,e8$WinSeed,e8$Winner,e8$LoseSeed,e8$Loser))
+
+cat(sprintf("\n\nFinal 4"))
+cat(sprintf("\n%8s  ||  #%2i %19s  ||  #%2i %19s", f4$safety,f4$WinSeed,f4$Winner,f4$LoseSeed,f4$Loser))
+
+cat(sprintf("\n\nChampionship"))
+cat(sprintf("\n%8s  ||  #%2i %19s  ||  #%2i %19s", champ$safety,champ$WinSeed,champ$Winner,champ$LoseSeed,champ$Loser))
+```
+
+
+
+
+
+
+
+

@@ -1,0 +1,322 @@
+```{r}
+library(leaps)
+library(broom)
+library(corrplot)
+library(dplyr)
+library(e1071)
+library(rpart)
+stand <- function(x){(x-min(x))/(max(x)-min(x))}
+count <- 0
+cnt <- 0
+right <- 1
+```
+
+1st round
+```{r}
+aaa <- read.csv("./Data-1st-rd.csv", header = TRUE)
+
+aaa$T1 <- as.numeric(aaa$Tseed == 1)
+aaa$T2 <- as.numeric(aaa$Tseed == 2)
+aaa$T3 <- as.numeric(aaa$Tseed == 3)
+aaa$T4 <- as.numeric(aaa$Tseed == 4)
+aaa$T5 <- as.numeric(aaa$Tseed == 5)
+aaa$T6 <- as.numeric(aaa$Tseed == 6)
+aaa$T7 <- as.numeric(aaa$Tseed == 7)
+aaa$T8 <- as.numeric(aaa$Tseed == 8)
+
+a <- aaa[c(1:192),]
+```
+
+```{r}
+s1 <- lm(Score~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o
+         +Tken_n+Bken_n+Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150+Tl150
+         +Bl150+Tstr+Bstr+This+Bhis+T1+T2+T3+T4+T5+T6+T7+T8,data=a)
+summary(s1)
+a$result <- predict(s1)
+mean(abs(resid(s2))) #7.310
+#71 -- 62 @-.75
+####################################################################################################
+#
+s2 <- lm(Score~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o
+         +Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150+Tstr+Bstr+This+Bhis
+         +T1+T2+T3+T4+T5+T6+T7+T8,data=a)
+summary(s2)
+a$result <- predict(s2)
+#69 -- 66 @-1
+#
+####################################################################################################
+s3 <- lm(Score~Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o+Tdef+Bdef
+         +Tsos+Bsos+T12+B12+Tw50+Bw50+Tw150+Bw150+Tstr+Bstr+This+Bhis+T1+T2+T3+T4+T5+T6+T7+T8,data=a)
+summary(s3)
+a$result <- predict(s3)
+#69 -- 66 @-.5
+####################################################################################################
+s4 <- lm(Score~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o
+         +Tken_n+Bken_n+Toff+Boff+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150+Tstr+Bstr+This
+         +Bhis+T1+T2+T3+T4+T5+T6+T7+T8,data=a)
+summary(s4)
+a$result <- predict(s4)
+#69 -- 66 @-.75
+####################################################################################################
+
+for(j in seq(from=-5, to=5, by=.25)){
+for(i in c(1:192)){
+  if(a$Score[i] > a$Spread[i]){
+    if(a$result[i]+j < a$Spread[i]){
+      count = count + 1
+      right <- 0
+    }
+  }
+  if(a$Score[i] < a$Spread[i]){
+    if(a$result[i]+j > a$Spread[i]){
+      count = count + 1
+      right <- 0
+    }
+  }
+  if(right == 1){
+    if(a$Spread[i] != a$Score[i]){
+      cnt = cnt + 1
+    }
+  }
+  right <- 1
+}
+  cat(sprintf("%5g %7i %7i\n",j,cnt,count))
+  count <- 0
+  cnt <- 0
+}
+a <- a[c(1,60,2:59)]
+summary(s1)$adj.r.squared
+summary(s2)$adj.r.squared
+summary(s3)$adj.r.squared
+summary(s4)$adj.r.squared
+```
+
+2nd Round
+```{r}
+ccc <- read.csv("./Data-2nd-rd.csv", header = TRUE)
+c <- ccc[c(1:96),]
+```
+
+```{r}
+s11 <- lm(Score~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o
+          +Tken_n+Bken_n+Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150+Tl150
+          +Bl150+Tstr+Bstr+This+Bhis,data=c)
+summary(s11)
+c$result <- predict(s11)
+mean(abs(resid(s11))) #6.524
+#27 -- 22 @3-3.5    24 @-2.5,2-2.5
+####################################################################################################
+s12 <- lm(Score~Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o+Tken_n
+          +Bken_n+Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150+Tl150+Bl150
+          +Tstr+Bstr+This+Bhis,data=c)
+summary(s12)
+c$result <- predict(s12)
+#25 -- 22 @3
+####################################################################################################
+s13 <- lm(Score~Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_n+Bken_n+Toff+Boff
+          +Tdef+Bdef+Tsos+Bsos+T12+B12+Tw150+Bw150+Tl150+Bl150+Tstr+Bstr+This+Bhis,data=c)
+summary(s13)
+c$result <- predict(s13)
+#22 -- 19 @-1.75--1.25
+####################################################################################################
+#
+s14 <- lm(Score~Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_n+Bken_n+Toff+Boff
+          +Tdef+Bdef+Tsos+Bsos+T12+B12+Tw150+Bw150+Tl150+Bl150+Tstr+Bstr,data=c)
+summary(s14)
+c$result <- predict(s14)
+#22 -- 18 @-1.5
+#
+####################################################################################################
+s15 <- lm(Score~Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_n+Bken_n+Toff+Boff
+          +Tsos+Bsos+T12+B12+Tw150+Bw150+Tl150+Bl150+Tstr+Bstr,data=c)
+summary(s15)
+c$result <- predict(s15)
+#21 -- 19 @-2--1.5,-1
+####################################################################################################
+
+for(j in seq(from=-5, to=5, by=.25)){
+for(i in c(1:96)){
+  if(c$Score[i] > c$Spread[i]){
+    if(c$result[i]+j < c$Spread[i]){
+      count = count + 1
+    }
+  }
+  if(c$Score[i] < c$Spread[i]){
+    if(c$result[i]+j > c$Spread[i]){
+      count = count + 1
+    }
+  }
+}
+  cat(sprintf("%5g %7i\n",j,count))
+  count <- 0
+}
+c <- c[c(1,52,2:51)]
+summary(s11)$adj.r.squared
+summary(s12)$adj.r.squared
+summary(s13)$adj.r.squared
+summary(s14)$adj.r.squared
+summary(s15)$adj.r.squared
+```
+
+Sweet 16
+```{r}
+eee <- read.csv("./Data-s16.csv", header = TRUE)
+e <- eee[c(1:48),]
+f <- rbind(c[,c(1:50)],e[,c(1:50)])
+```
+
+```{r}
+s21 <- lm(Score~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o
+          +Tken_n+Bken_n+Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150+Tl150
+          +Bl150+Tstr+Bstr+This+Bhis,data=e)
+summary(s21)
+e$result <- predict(s21)
+mean(abs(resid(s21))) #3.804
+#7 -- 4 @-2.25--1
+####################################################################################################
+s22 <- lm(Score~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o+Tken_n
+          +Bken_n+Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150+Tl150+Bl150
+          +Tstr+Bstr+This+Bhis,data=e)
+summary(s22)
+e$result <- predict(s22)
+#7 -- 3 @-1.75--1.5
+####################################################################################################
+#
+s23 <- lm(Score~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Tken_o+Bken_o+Tken_n+Bken_n+Toff+Boff+Tdef+Bdef+Tsos
+          +Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150+Tl150+Bl150+Tstr+Bstr+This+Bhis,data=e)
+summary(s23)
+e$result <- predict(s23)
+#4 -- 4 @-1.25-.25
+#
+####################################################################################################
+s24 <- lm(Score~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o+Tken_n
+          +Bken_n+Toff+Boff+Tdef+Bdef+Tsos+Bsos+Tw50+Bw50+Tl50+Bl50+Tl150+Bl150+This+Bhis,data=e)
+summary(s24)
+e$result <- predict(s24)
+#4 -- 4 @-.25-.5
+####################################################################################################
+
+for(j in seq(from=-5, to=5, by=.25)){
+for(i in c(1:48)){
+  if(e$Score[i] > e$Spread[i]){
+    if(e$result[i]+j < e$Spread[i]){
+      count = count + 1
+    }
+  }
+  if(e$Score[i] < e$Spread[i]){
+    if(e$result[i]+j > e$Spread[i]){
+      count = count + 1
+    }
+  }
+}
+  cat(sprintf("%5g %7i\n",j,count))
+  count <- 0
+}
+e <- e[c(1,52,2:51)]
+summary(s21)$adj.r.squared
+summary(s22)$adj.r.squared
+summary(s23)$adj.r.squared
+summary(s24)$adj.r.squared
+```
+
+Final
+```{r}
+ggg <- read.csv("./Data-Final.csv", header = TRUE)
+g <- ggg[c(1:24,29:40,43:48),]
+h <- rbind(e[,c(1:50)],g[,c(1:50)])
+k <- rbind(c[,c(1:50)],e[,c(1:50)],g[,c(1:50)])
+```
+
+```{r}
+s31 <- lm(Score~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o
+          +Tken_n+Bken_n+Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150+Tl150
+          +Bl150+Tstr+Bstr+This+Bhis,data=g)
+summary(s31)
+g$result <- predict(s31)
+mean(abs(resid(s31))) #5.088
+#6 -- 6 @-2,0-.5
+####################################################################################################
+s32 <- lm(Score~Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o+Toff+Boff+Tdef+Bdef+T12+B12+Tw50
+          +Bw50+Tl50+Bl50+Tw150+Bw150+Tstr+Bstr+This+Bhis,data=g)
+summary(s32)
+g$result <- predict(s32)
+#5 -- 5 @-2-0
+####################################################################################################
+#
+s33 <- lm(Score~Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o+Toff+Boff+Tdef+Bdef+T12+B12+Tw50
+          +Bw50+Tl50+Bl50+Tw150+Bw150+Tstr+Bstr,data=g)
+summary(s33)
+g$result <- predict(s33)
+#5 -- 5 @-1-0
+#
+####################################################################################################
+
+for(j in seq(from=-5, to=5, by=.5)){
+for(i in c(1:42)){
+  if(g$Score[i] > g$Spread[i]){
+    if(g$result[i]+j < g$Spread[i]){
+      count = count + 1
+    }
+  }
+  if(g$Score[i] < g$Spread[i]){
+    if(g$result[i]+j > g$Spread[i]){
+      count = count + 1
+    }
+  }
+}
+  cat(sprintf("%5g %7i\n",j,count))
+  count <- 0
+}
+g <- g[c(1,52,2:51)]
+summary(s31)$adj.r.squared
+summary(s32)$adj.r.squared
+summary(s33)$adj.r.squared
+```
+
+Combo
+```{r}
+s41 <- lm(Score~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o
+         +Tken_n+Bken_n+Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150+Tl150
+         +Bl150+Tstr+Bstr+This+Bhis,data=h)
+summary(s41)
+h$result <- predict(s41)
+mean(abs(resid(s41))) #7.018
+#24 -- 22 @-1--.5
+####################################################################################################
+s42 <- lm(Score~Tcon+Bcon+Twin+Bwin+Trpi+Brpi+Tbpi_o+Bbpi_o+Tken_o+Bken_o+Tken_n+Bken_n+Toff+Boff
+          +Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tl150+Bl150+This+Bhis,data=h)
+summary(s42)
+h$result <- predict(s42)
+#23 -- 19 @-2.5
+####################################################################################################
+
+for(j in seq(from=-5, to=5, by=.5)){
+for(i in c(1:90)){
+  if(h$Score[i] > h$Spread[i]){
+    if(h$result[i]+j < h$Spread[i]){
+      count = count + 1
+    }
+  }
+  if(h$Score[i] < h$Spread[i]){
+    if(h$result[i]+j > h$Spread[i]){
+      count = count + 1
+    }
+  }
+}
+  cat(sprintf("%5g %7i\n",j,count))
+  count <- 0
+}
+h <- h[c(1,52,2:51)]
+```
+
+
+
+
+
+
+
+
+
+
+
+

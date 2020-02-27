@@ -1,0 +1,655 @@
+```{r}
+library(dplyr)
+library(ggplot2)
+winplot <- function(combo){
+  x <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+  p <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+  n <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+  s <- c("0.0-0.1","0.1-0.2","0.2-0.3","0.3-0.4","0.4-0.5","0.5-0.6","0.6-0.7","0.7-0.8","0.8-0.9","0.9-1.0")
+  h <- data.frame(x,p,n,s)
+  for(i in c(1:10)){
+    h$x[i] <- .1*i-.05
+    temp <- filter(combo, Tpct > .1*(i-1), Tpct < .1*i)
+    h$p[i] <- nrow(filter(temp, Score > Spread)) / nrow(temp)
+    h$n[i] <- nrow(temp)
+  }
+  ggplot(h, aes(x=x, y=p, color="red")) +
+    geom_point(aes(size=n)) +
+    geom_text(aes(label=s,hjust=0, vjust=2)) +
+    geom_abline(intercept = 0, slope = 1) +
+    xlim(0, 1) +
+    ylim(0, 1) +
+    ggtitle("Predicted Home Win Probability Validation") +
+    xlab("Predicted Home Win Percentage") +
+    ylab("Actual Home Win Percentage")
+}
+
+count <- 1
+```
+
+
+1st round
+```{r}
+a <- read.csv("./Data-1st-rd.csv", header = TRUE)
+
+a$T1 <- as.numeric(aaa$Tseed == 1)
+a$T2 <- as.numeric(aaa$Tseed == 2)
+a$T3 <- as.numeric(aaa$Tseed == 3)
+a$T4 <- as.numeric(aaa$Tseed == 4)
+a$T5 <- as.numeric(aaa$Tseed == 5)
+a$T6 <- as.numeric(aaa$Tseed == 6)
+a$T7 <- as.numeric(aaa$Tseed == 7)
+a$T8 <- as.numeric(aaa$Tseed == 8)
+
+aa <- a[c(1:192),]
+a$Tpct <- 0
+a$Bpct <- 0
+a$Right <- 0
+a$Team <- ""
+a$Pick <- 0
+a$Winpct <- 0
+
+s2 <- lm(Score~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o
+         +Toff+Boff+Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150+Tstr+Bstr+This+Bhis
+         +T1+T2+T3+T4+T5+T6+T7+T8,data=aa)
+a$result <- suppressWarnings(predict(s2, a))
+sd1 <- sd(resid(s2))
+a$Tpct <- pt((a$result-a$Spread)/(sd1), nrow(a))
+a$Bpct <-  pt(-(a$result-a$Spread)/(sd1), nrow(a))
+#winplot(a[c(1:192),])
+
+for(i in c(1:224)){
+  if(a$Spread[i] < a$result[i]){
+    a$Team[i] <- as.character(a$Top[i])
+    a$Pick[i] <- -a$Spread[i]
+    a$Winpct[i] <- a$Tpct[i]
+  }
+  if(a$Spread[i] > a$result[i]){
+    a$Team[i] <- as.character(a$Bottom[i])
+    a$Pick[i] <- a$Spread[i]
+    a$Winpct[i] <- a$Bpct[i]
+  }
+}
+
+first <- a[c(193:224),]
+cat(sprintf("\n#%2i %19s | %6.2f | #%2i %19s || %19s: %6.1f || %6.1f%%", first$Tseed,first$Top,first$result,first$Bseed,first$Bottom,first$Team,first$Pick,first$Winpct*100))
+```
+
+
+2nd Round
+```{r}
+c <- read.csv("./Data-2nd-rd.csv", header = TRUE)
+
+cc <- c[c(1:96),]
+c$Tpct <- 0
+c$Bpct <- 0
+c$Right <- 0
+c$Team <- ""
+c$Pick <- 0
+c$Winpct <- 0
+
+s14 <- lm(Score~Twin+Bwin+Tloss+Bloss+Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_n+Bken_n+Toff+Boff
+          +Tdef+Bdef+Tsos+Bsos+T12+B12+Tw150+Bw150+Tl150+Bl150+Tstr+Bstr,data=cc)
+c$result <- suppressWarnings(predict(s14, c))
+sd2 <- sd(resid(s14))
+c$Tpct <- pt((c$result-c$Spread)/(sd2), nrow(c))
+c$Bpct <-  pt(-(c$result-c$Spread)/(sd2), nrow(c))
+#winplot(c[c(1:96),])
+
+for(i in c(1:112)){
+  if(c$Spread[i] < c$result[i]){
+    c$Team[i] <- as.character(c$Top[i])
+    c$Pick[i] <- -c$Spread[i]
+    c$Winpct[i] <- c$Tpct[i]
+  }
+  if(c$Spread[i] > c$result[i]){
+    c$Team[i] <- as.character(c$Bottom[i])
+    c$Pick[i] <- c$Spread[i]
+    c$Winpct[i] <- c$Bpct[i]
+  }
+}
+
+second <- c[c(97:112),]
+cat(sprintf("\n#%2i %19s | %6.2f | #%2i %19s || %19s: %6.1f || %6.1f%%", second$Tseed,second$Top,second$result,second$Bseed,second$Bottom,second$Team,second$Pick,second$Winpct*100))
+```
+
+
+Sweet 16
+```{r}
+e <- read.csv("./Data-s16.csv", header = TRUE)
+g <- read.csv("./Data-final.csv", header = TRUE)
+h <- rbind(e,g)
+hh <- h[c(1:48,57:80,85:96,99:104),]
+h$Tpct <- 0
+h$Bpct <- 0
+h$Right <- 0
+h$Team <- ""
+h$Pick <- 0
+h$Winpct <- 0
+
+s42 <- lm(Score~Tcon+Bcon+Twin+Bwin+Trpi+Brpi+Tbpi_o+Bbpi_o+Tken_o+Bken_o+Tken_n+Bken_n+Toff+Boff
+          +Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tl150+Bl150+This+Bhis,data=hh)
+h$result <- suppressWarnings(predict(s42, h))
+sd3 <- sd(resid(s42))
+h$Tpct <- pt((h$result-h$Spread)/(sd3), nrow(h))
+h$Bpct <-  pt(-(h$result-h$Spread)/(sd3), nrow(h))
+
+for(i in c(1:105)){
+  if(h$Spread[i] < h$result[i]){
+    h$Team[i] <- as.character(h$Top[i])
+    h$Pick[i] <- -h$Spread[i]
+    h$Winpct[i] <- h$Tpct[i]
+  }
+  if(h$Spread[i] > h$result[i]){
+    h$Team[i] <- as.character(h$Bottom[i])
+    h$Pick[i] <- h$Spread[i]
+    h$Winpct[i] <- h$Bpct[i]
+  }
+}
+
+s16 <- h[c(49:56),]
+cat(sprintf("\n#%2i %19s | %6.2f | #%2i %19s || %19s: %6.1f || %6.1f%%", s16$Tseed,s16$Top,s16$result,s16$Bseed,s16$Bottom,s16$Team,s16$Pick,s16$Winpct*100))
+```
+
+
+Elite 8
+```{r}
+e <- read.csv("./Data-s16.csv", header = TRUE)
+g <- read.csv("./Data-final.csv", header = TRUE)
+h <- rbind(e,g)
+hh <- h[c(1:48,57:80,85:96,99:104),]
+h$Tpct <- 0
+h$Bpct <- 0
+h$Right <- 0
+h$Team <- ""
+h$Pick <- 0
+h$Winpct <- 0
+
+s42 <- lm(Score~Tcon+Bcon+Twin+Bwin+Trpi+Brpi+Tbpi_o+Bbpi_o+Tken_o+Bken_o+Tken_n+Bken_n+Toff+Boff
+          +Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tl150+Bl150+This+Bhis,data=hh)
+h$result <- suppressWarnings(predict(s42, h))
+sd3 <- sd(resid(s42))
+h$Tpct <- pt((h$result-h$Spread)/(sd3), nrow(h))
+h$Bpct <-  pt(-(h$result-h$Spread)/(sd3), nrow(h))
+#winplot(h)
+
+for(i in c(1:105)){
+  if(h$Spread[i] < h$result[i]){
+    h$Team[i] <- as.character(h$Top[i])
+    h$Pick[i] <- -h$Spread[i]
+    h$Winpct[i] <- h$Tpct[i]
+  }
+  if(h$Spread[i] > h$result[i]){
+    h$Team[i] <- as.character(h$Bottom[i])
+    h$Pick[i] <- h$Spread[i]
+    h$Winpct[i] <- h$Bpct[i]
+  }
+}
+
+e8 <- h[c(81:84),]
+cat(sprintf("\n#%2i %19s | %6.2f | #%2i %19s || %19s: %6.1f || %6.1f%%", e8$Tseed,e8$Top,e8$result,e8$Bseed,e8$Bottom,e8$Team,e8$Pick,e8$Winpct*100))
+```
+
+
+Final 4
+```{r}
+e <- read.csv("./Data-s16.csv", header = TRUE)
+g <- read.csv("./Data-final.csv", header = TRUE)
+h <- rbind(e,g)
+hh <- h[c(1:48,57:80,85:96,99:104),]
+h$Tpct <- 0
+h$Bpct <- 0
+h$Right <- 0
+h$Team <- ""
+h$Pick <- 0
+h$Winpct <- 0
+
+s42 <- lm(Score~Tcon+Bcon+Twin+Bwin+Trpi+Brpi+Tbpi_o+Bbpi_o+Tken_o+Bken_o+Tken_n+Bken_n+Toff+Boff
+          +Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tl150+Bl150+This+Bhis,data=hh)
+h$result <- suppressWarnings(predict(s42, h))
+sd3 <- sd(resid(s42))
+h$Tpct <- pt((h$result-h$Spread)/(sd3), nrow(h))
+h$Bpct <-  pt(-(h$result-h$Spread)/(sd3), nrow(h))
+
+for(i in c(1:105)){
+  if(h$Spread[i] < h$result[i]){
+    h$Team[i] <- as.character(h$Top[i])
+    h$Pick[i] <- -h$Spread[i]
+    h$Winpct[i] <- h$Tpct[i]
+  }
+  if(h$Spread[i] > h$result[i]){
+    h$Team[i] <- as.character(h$Bottom[i])
+    h$Pick[i] <- h$Spread[i]
+    h$Winpct[i] <- h$Bpct[i]
+  }
+}
+
+f4 <- h[c(97:98),]
+cat(sprintf("\n#%2i %19s | %6.2f | #%2i %19s || %19s: %6.1f || %6.1f%%", f4$Tseed,f4$Top,f4$result,f4$Bseed,f4$Bottom,f4$Team,f4$Pick,f4$Winpct*100))
+```
+
+
+Championship
+```{r}
+e <- read.csv("./Data-s16.csv", header = TRUE)
+g <- read.csv("./Data-final.csv", header = TRUE)
+h <- rbind(e,g)
+hh <- h[c(1:48,57:80,85:96,99:104),]
+h$Tpct <- 0
+h$Bpct <- 0
+h$Right <- 0
+h$Team <- ""
+h$Pick <- 0
+h$Winpct <- 0
+
+s42 <- lm(Score~Tcon+Bcon+Twin+Bwin+Trpi+Brpi+Tbpi_o+Bbpi_o+Tken_o+Bken_o+Tken_n+Bken_n+Toff+Boff
+          +Tdef+Bdef+Tsos+Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tl150+Bl150+This+Bhis,data=hh)
+h$result <- suppressWarnings(predict(s42, h))
+sd3 <- sd(resid(s42))
+h$Tpct <- pt((h$result-h$Spread)/(sd3), nrow(h))
+h$Bpct <-  pt(-(h$result-h$Spread)/(sd3), nrow(h))
+winplot(h[c(1:48,57:80,85:96,99:104),])
+
+for(i in c(1:105)){
+  if(h$Spread[i] < h$result[i]){
+    h$Team[i] <- as.character(h$Top[i])
+    h$Pick[i] <- -h$Spread[i]
+    h$Winpct[i] <- h$Tpct[i]
+  }
+  if(h$Spread[i] > h$result[i]){
+    h$Team[i] <- as.character(h$Bottom[i])
+    h$Pick[i] <- h$Spread[i]
+    h$Winpct[i] <- h$Bpct[i]
+  }
+}
+
+champ <- h[105,]
+cat(sprintf("\n#%2i %19s | %6.2f | #%2i %19s || %19s: %6.1f || %6.1f%%", champ$Tseed,champ$Top,champ$result,champ$Bseed,champ$Bottom,champ$Team,champ$Pick,champ$Winpct*100))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Sweet 16
+```{r}
+eee <- read.csv("./Data-s16.csv", header = TRUE)
+
+e <- e[c(1:48),]
+e$Tpct <- 0
+e$Bpct <- 0
+e$Right <- 0
+e$Team <- ""
+e$Pick <- 0
+```
+
+```{r}
+s23 <- lm(Score~Tcon+Bcon+Twin+Bwin+Tloss+Bloss+Tken_o+Bken_o+Tken_n+Bken_n+Toff+Boff+Tdef+Bdef+Tsos
+          +Bsos+T12+B12+Tw50+Bw50+Tl50+Bl50+Tw150+Bw150+Tl150+Bl150+Tstr+Bstr+This+Bhis,data=e)
+e$result <- predict(s23)
+sd3 <- sd(resid(s23))
+e$Tpct <- pt((e$result-e$Spread)/(sd3), nrow(e))
+e$Bpct <-  pt(-(e$result-e$Spread)/(sd3), nrow(e))
+#winplot(e)
+
+for(i in c(1:48)){
+  if(e$Spread[i] < e$result[i]){
+    e$Team[i] <- as.character(e$Top[i])
+    e$Pick[i] <- -e$Spread[i]
+  }
+  if(e$Spread[i] > e$result[i]){
+    e$Team[i] <- as.character(e$Bottom[i])
+    e$Pick[i] <- e$Spread[i]
+    e$Tpct[i] <- e$Bpct[i]
+  }
+}
+
+s16 <- e[c(41:48),]
+cat(sprintf("#%2i %19s | %6.2f | #%2i %19s || %19s: %6.1f || %6.1f%%\n", s16$Tseed,s16$Top,s16$result,s16$Bseed,s16$Bottom,s16$Team,s16$Pick,s16$Tpct*100))
+```
+
+
+Elite 8
+```{r}
+ggg <- read.csv("./Data-final.csv", header = TRUE)
+
+g <- ggg[c(1:24,29:40,43:48),]
+g$Tpct <- 0
+g$Bpct <- 0
+g$Right <- 0
+g$Team <- ""
+g$Pick <- 0
+```
+
+```{r}
+s33 <- lm(Score~Trpi+Brpi+Tbpi_o+Bbpi_o+Tbpi_n+Bbpi_n+Tken_o+Bken_o+Toff+Boff+Tdef+Bdef+T12+B12+Tw50
+          +Bw50+Tl50+Bl50+Tw150+Bw150+Tstr+Bstr,data=g)
+g$result <- predict(s33)
+sd4 <- sd(resid(s33))
+g$Tpct <- pt((g$result-g$Spread)/(sd4), nrow(g))
+g$Bpct <-  pt(-(g$result-g$Spread)/(sd4), nrow(g))
+#winplot(g)
+
+for(i in c(1:42)){
+  if(g$Spread[i] < g$result[i]){
+    g$Team[i] <- as.character(g$Top[i])
+    g$Pick[i] <- -g$Spread[i]
+  }
+  if(g$Spread[i] > g$result[i]){
+    g$Team[i] <- as.character(g$Bottom[i])
+    g$Pick[i] <- g$Spread[i]
+    g$Tpct[i] <- g$Bpct[i]
+  }
+}
+
+e8 <- g[c(21:24),]
+cat(sprintf("#%2i %19s | %6.2f | #%2i %19s || %19s: %6.1f || %6.1f%%\n", e8$Tseed,e8$Top,e8$result,e8$Bseed,e8$Bottom,e8$Team,e8$Pick,e8$Tpct*100))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+for(i in c(1:32)){
+  if(first$Score[i] > first$Spread[i]){
+    if(first$result[i] < first$Spread[i]){
+      first$Right[i] <- 0
+      count <- 0
+    }
+  }
+  if(first$Score[i] < first$Spread[i]){
+    if(first$result[i] > first$Spread[i]){
+      first$Right[i] <- 0
+      count <- 0
+    }
+  }
+  if(count == 1){
+    if(first$Spread[i] != first$Score[i]){
+      first$Right[i] <- 1
+    }
+  }
+  if(first$Spread[i] == first$Score[i]){
+    first$Right[i] <- NA
+  }
+  count <- 1
+}
+first <- first[c(1,60,61,2:59)]
+
+for(i in c(1:32)){
+  if(first$Score[i] > first$Spread[i]){
+    if(-top.spr[i] < first$Spread[i]){
+      first$Right[i] <- 0
+      count <- 0
+    }
+  }
+  if(first$Score[i] < first$Spread[i]){
+    if(-top.spr[i] > first$Spread[i]){
+      first$Right[i] <- 0
+      count <- 0
+    }
+  }
+  if(count == 1){
+    if(first$Spread[i] != first$Score[i]){
+      first$Right[i] <- 1
+    }
+  }
+  if(first$Spread[i] == first$Score[i]){
+    first$Right[i] <- NA
+  }
+  count <- 1
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+library(dplyr)
+
+odd64 <- c(1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47,49,51,53,55,57,59,61,63)
+even64 <- c(2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64)
+odd32 <- c(1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31)
+even32 <- c(2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32)
+odd16 <- c(1,3,5,7,9,11,13,15)
+even16 <- c(2,4,6,8,10,12,14,16)
+odd8 <- c(1,3,5,7)
+even8 <- c(2,4,6,8)
+```
+
+
+```{r}
+first <- read.csv("./2019-1st.csv")
+first_diff <- first <- read.csv("./2019-1st.csv")
+
+first_diff <- first_diff %>%
+  mutate(Con.rpi.d = 0, Record.d = 0, Rpi.d = 0, Bpi.old.d = 0, Bpi.new.d = 0, Bpi.rank.d = 0, Ken.old.d = 0, Ken.new.d = 0, Ken.rank.d = 0, Off.d = 0, Off.rank.d = 0, Def.d = 0, Def.rank.d = 0, Sos.d = 0, Last.12.d = 0, W.vs.50.d = 0, W50.d = 0, L50.d = 0, L.vs.150.d = 0, W150.d = 0, L150.d = 0, Streak.d = 0, History.d = 0, Seed.d = 0) %>%
+  select(Con.rpi.d, Record.d, Rpi.d, Bpi.old.d, Bpi.new.d, Bpi.rank.d, Ken.old.d, Ken.new.d, Ken.rank.d, Off.d, Off.rank.d, Def.d, Def.rank.d, Sos.d, Last.12.d, W.vs.50.d, W50.d, L50.d, L.vs.150.d, W150.d, L150.d, Streak.d, History.d, Seed.d)
+
+
+
+for(i in odd64){
+  first_diff[i, 1] <- first[i,5] - first[i+1,5] #Con.rpi ""
+  first_diff[i, 2] <- ((first[i, 6] - first[i, 7]) - (first[i+1, 6] - first[i+1, 7])) / 2 #Record Wins Losses
+  first_diff[i, 3] <- first[i, 8] - first[i+1, 8] #Rpi ""
+  first_diff[i, 5] <- first[i, 10] - first[i+1, 10] #Bpi.new Bpi
+  first_diff[i, 6] <- -(first[i, 11] - first[i+1, 11]) #Bpi.rank ""
+  first_diff[i, 8] <- first[i, 12] - first[i+1, 12] #Ken.new Kenpom
+  first_diff[i, 9] <- -(first[i, 13] - first[i+1, 13]) #Ken.rank Kp.Rank
+  first_diff[i, 10] <- first[i, 14] - first[i+1, 14] #Off Offense
+  first_diff[i, 11] <- -(first[i, 15] - first[i+1, 15]) #Off.rank ""
+  first_diff[i, 12] <- -(first[i, 16] - first[i+1, 16]) #Def Defense
+  first_diff[i, 13] <- -(first[i, 17] - first[i+1, 17]) #Def.rank ""
+  first_diff[i, 14] <- first[i, 18] - first[i+1, 18] #Sos ""
+  first_diff[i, 15] <- first[i, 20] - first[i+1, 20] #Last.12 Last.12.W
+  first_diff[i, 16] <- ((2*first[i, 22] - first[i, 23]) - (2*first[i+1, 22] - first[i+1, 23])) #W.vs.50 "" L.vs.50
+  first_diff[i, 17] <- first[i, 22] - first[i+1, 22] #W50 W.vs.50
+  first_diff[i, 18] <- first[i, 23] - first[i+1, 23] #L50 L.vs.50
+  first_diff[i, 19] <- -((first[i, 24] + 5*first[i, 25]) - (first[i+1, 24] + 5*first[i+1, 25])) #L.vs.150 W.vs.150
+  first_diff[i, 20] <- first[i, 24] - first[i+1, 24] #W150 W.vs.150
+  first_diff[i, 21] <- first[i, 25] - first[i+1, 25] #L150 L.vs.150
+  first_diff[i, 22] <- first[i, 26] - first[i+1, 26] #Streak ""
+  first_diff[i, 23] <- first[i, 27] - first[i+1, 27] #History ""
+  first_diff[i, 24] <- -(first[i, 1] - first[i+1, 1]) #Seed X
+}
+first_diff <- first_diff[-even64, ]
+
+
+
+first_diff <- first_diff %>%
+  mutate(winner = Con.rpi.d*-86.99671 + Record.d*0.35457 + Rpi.d*0 + Bpi.old.d*0 + Bpi.new.d*0.6281 + Bpi.rank.d*0 + Ken.old.d*52.14024 + Ken.new.d*0.37307 + Ken.rank.d*0 + Off.d*0	+ Off.rank.d*0 + Def.d*-0.09122 +	Def.rank.d*0 + Sos.d*64.13222 + Last.12.d*-0.69301 + W.vs.50.d*0 + W50.d*-0.2948 + L50.d*-0.1583 + L.vs.150.d*0 + W150.d*-0.15457 + L150.d*-0.40112 + Streak.d*-0.23904 + History.d*0 + Seed.d*0 + -3.7)
+
+top.rank <- c(1:32)
+top <- c(1:32)
+top.spr <- c(1:32)
+bot.rank <- c(1:32)
+bot <- c(1:32)
+bot.spr <- c(1:32)
+for(i in c(1:32)){
+  top.rank[i] <- first[i*2-1,1]
+  top[i] <- as.character(first[i*2-1,2])
+  top.spr[i] <- -first_diff[i,25]
+  bot.rank[i] <- first[i*2,1]
+  bot[i] <- as.character(first[i*2,2])
+  bot.spr[i] <- first_diff[i,25]
+}
+
+
+cat(sprintf("#%2i %17s: %6.2f  |  #%2i %17s: %6.2f\n",top.rank,top,top.spr,bot.rank,bot,bot.spr))
+
+```
+
+
+```{r}
+sec <- read.csv("./2019-2nd.csv")
+sec_diff <- sec <- read.csv("./2019-2nd.csv")
+
+sec_diff <- sec_diff %>%
+  mutate(Con.rpi.d = 0, Record.d = 0, Rpi.d = 0, Bpi.old.d = 0, Bpi.new.d = 0, Bpi.rank.d = 0, Ken.old.d = 0, Ken.new.d = 0, Ken.rank.d = 0, Off.d = 0, Off.rank.d = 0, Def.d = 0, Def.rank.d = 0, Sos.d = 0, Last.12.d = 0, W.vs.50.d = 0, W50.d = 0, L50.d = 0, L.vs.150.d = 0, W150.d = 0, L150.d = 0, Streak.d = 0, History.d = 0, Seed.d = 0) %>%
+  select(Con.rpi.d, Record.d, Rpi.d, Bpi.old.d, Bpi.new.d, Bpi.rank.d, Ken.old.d, Ken.new.d, Ken.rank.d, Off.d, Off.rank.d, Def.d, Def.rank.d, Sos.d, Last.12.d, W.vs.50.d, W50.d, L50.d, L.vs.150.d, W150.d, L150.d, Streak.d, History.d, Seed.d)
+
+
+
+for(i in odd32){
+  sec_diff[i, 1] <- sec[i,5] - sec[i+1,5] #Con.rpi ""
+  sec_diff[i, 2] <- ((sec[i, 6] - sec[i, 7]) - (sec[i+1, 6] - sec[i+1, 7])) / 2 #Record Wins Losses
+  sec_diff[i, 3] <- sec[i, 8] - sec[i+1, 8] #Rpi ""
+  sec_diff[i, 5] <- sec[i, 10] - sec[i+1, 10] #Bpi.new Bpi
+  sec_diff[i, 6] <- -(sec[i, 11] - sec[i+1, 11]) #Bpi.rank ""
+  sec_diff[i, 8] <- sec[i, 12] - sec[i+1, 12] #Ken.new Kenpom
+  sec_diff[i, 9] <- -(sec[i, 13] - sec[i+1, 13]) #Ken.rank Kp.Rank
+  sec_diff[i, 10] <- sec[i, 14] - sec[i+1, 14] #Off Offense
+  sec_diff[i, 11] <- -(sec[i, 15] - sec[i+1, 15]) #Off.rank ""
+  sec_diff[i, 12] <- -(sec[i, 16] - sec[i+1, 16]) #Def Defense
+  sec_diff[i, 13] <- -(sec[i, 17] - sec[i+1, 17]) #Def.rank ""
+  sec_diff[i, 14] <- sec[i, 18] - sec[i+1, 18] #Sos ""
+  sec_diff[i, 15] <- sec[i, 20] - sec[i+1, 20] #Last.12 Last.12.W
+  sec_diff[i, 16] <- ((2*sec[i, 22] - sec[i, 23]) - (2*sec[i+1, 22] - sec[i+1, 23])) #W.vs.50 "" L.vs.50
+  sec_diff[i, 17] <- sec[i, 22] - sec[i+1, 22] #W50 W.vs.50
+  sec_diff[i, 18] <- sec[i, 23] - sec[i+1, 23] #L50 L.vs.50
+  sec_diff[i, 19] <- -((sec[i, 24] + 5*sec[i, 25]) - (sec[i+1, 24] + 5*sec[i+1, 25])) #L.vs.150 W.vs.150
+  sec_diff[i, 20] <- sec[i, 24] - sec[i+1, 24] #W150 W.vs.150
+  sec_diff[i, 21] <- sec[i, 25] - sec[i+1, 25] #L150 L.vs.150
+  sec_diff[i, 22] <- sec[i, 26] - sec[i+1, 26] #Streak ""
+  sec_diff[i, 23] <- sec[i, 27] - sec[i+1, 27] #History ""
+  sec_diff[i, 24] <- -(sec[i, 1] - sec[i+1, 1]) #Seed X
+}
+sec_diff <- sec_diff[-even32, ]
+
+
+
+sec_diff <- sec_diff %>%
+  mutate(winner = Con.rpi.d*0 + Record.d*0 + Rpi.d*-128.4 + Bpi.old.d*0 + Bpi.new.d*0 + Bpi.rank.d*0 + Ken.old.d*0 + Ken.new.d*-0.3792 + Ken.rank.d*0 + Off.d*1.218	+ Off.rank.d*0 + Def.d*1.3 +	Def.rank.d*0 + Sos.d*160 + Last.12.d*0 + W.vs.50.d*0 + W50.d*0 + L50.d*0 + L.vs.150.d*0 + W150.d*0.7538 + L150.d*0 + Streak.d*0 + History.d*0.008695 + Seed.d*0 + 3.9)
+
+top.rank <- c(1:16)
+top <- c(1:16)
+top.spr <- c(1:16)
+bot.rank <- c(1:16)
+bot <- c(1:16)
+bot.spr <- c(1:16)
+for(i in c(1:16)){
+  top.rank[i] <- sec[i*2-1,1]
+  top[i] <- as.character(sec[i*2-1,2])
+  top.spr[i] <- -sec_diff[i,25]
+  bot.rank[i] <- sec[i*2,1]
+  bot[i] <- as.character(sec[i*2,2])
+  bot.spr[i] <- sec_diff[i,25]
+}
+
+
+cat(sprintf("#%2i %17s: %6.2f  |  #%2i %17s: %6.2f\n",top.rank,top,top.spr,bot.rank,bot,bot.spr))
+
+```
+
+
+```{r}
+s16 <- read.csv("./2019-s16.csv")
+s16_diff <- s16 <- read.csv("./2019-s16.csv")
+
+s16_diff <- s16_diff %>%
+  mutate(Con.rpi.d = 0, Record.d = 0, Rpi.d = 0, Bpi.old.d = 0, Bpi.new.d = 0, Bpi.rank.d = 0, Ken.old.d = 0, Ken.new.d = 0, Ken.rank.d = 0, Off.d = 0, Off.rank.d = 0, Def.d = 0, Def.rank.d = 0, Sos.d = 0, Last.12.d = 0, W.vs.50.d = 0, W50.d = 0, L50.d = 0, L.vs.150.d = 0, W150.d = 0, L150.d = 0, Streak.d = 0, History.d = 0, Seed.d = 0) %>%
+  select(Con.rpi.d, Record.d, Rpi.d, Bpi.old.d, Bpi.new.d, Bpi.rank.d, Ken.old.d, Ken.new.d, Ken.rank.d, Off.d, Off.rank.d, Def.d, Def.rank.d, Sos.d, Last.12.d, W.vs.50.d, W50.d, L50.d, L.vs.150.d, W150.d, L150.d, Streak.d, History.d, Seed.d)
+
+
+
+for(i in odd16){
+  s16_diff[i, 1] <- s16[i,5] - s16[i+1,5] #Con.rpi ""
+  s16_diff[i, 2] <- ((s16[i, 6] - s16[i, 7]) - (s16[i+1, 6] - s16[i+1, 7])) / 2 #Record Wins Losses
+  s16_diff[i, 3] <- s16[i, 8] - s16[i+1, 8] #Rpi ""
+  s16_diff[i, 5] <- s16[i, 10] - s16[i+1, 10] #Bpi.new Bpi
+  s16_diff[i, 6] <- -(s16[i, 11] - s16[i+1, 11]) #Bpi.rank ""
+  s16_diff[i, 8] <- s16[i, 12] - s16[i+1, 12] #Ken.new Kenpom
+  s16_diff[i, 9] <- -(s16[i, 13] - s16[i+1, 13]) #Ken.rank Kp.Rank
+  s16_diff[i, 10] <- s16[i, 14] - s16[i+1, 14] #Off Offense
+  s16_diff[i, 11] <- -(s16[i, 15] - s16[i+1, 15]) #Off.rank ""
+  s16_diff[i, 12] <- -(s16[i, 16] - s16[i+1, 16]) #Def Defense
+  s16_diff[i, 13] <- -(s16[i, 17] - s16[i+1, 17]) #Def.rank ""
+  s16_diff[i, 14] <- s16[i, 18] - s16[i+1, 18] #Sos ""
+  s16_diff[i, 15] <- s16[i, 20] - s16[i+1, 20] #Last.12 Last.12.W
+  s16_diff[i, 16] <- ((2*s16[i, 22] - s16[i, 23]) - (2*s16[i+1, 22] - s16[i+1, 23])) #W.vs.50 "" L.vs.50
+  s16_diff[i, 17] <- s16[i, 22] - s16[i+1, 22] #W50 W.vs.50
+  s16_diff[i, 18] <- s16[i, 23] - s16[i+1, 23] #L50 L.vs.50
+  s16_diff[i, 19] <- -((s16[i, 24] + 5*s16[i, 25]) - (s16[i+1, 24] + 5*s16[i+1, 25])) #L.vs.150 W.vs.150
+  s16_diff[i, 20] <- s16[i, 24] - s16[i+1, 24] #W150 W.vs.150
+  s16_diff[i, 21] <- s16[i, 25] - s16[i+1, 25] #L150 L.vs.150
+  s16_diff[i, 22] <- s16[i, 26] - s16[i+1, 26] #Streak ""
+  s16_diff[i, 23] <- s16[i, 27] - s16[i+1, 27] #History ""
+  s16_diff[i, 24] <- -(s16[i, 1] - s16[i+1, 1]) #Seed X
+}
+s16_diff <- s16_diff[-even32, ]
+
+
+
+s16_diff <- s16_diff %>%
+  mutate(winner = Con.rpi.d*144 + Record.d*4.485 + Rpi.d*-285.4 + Bpi.old.d*0.1288 + Bpi.new.d*-3.505 + Bpi.rank.d*0 + Ken.old.d*-139.9 + Ken.new.d*0.1562 + Ken.rank.d*0 + Off.d*1.64	+ Off.rank.d*0 + Def.d*2.224 +	Def.rank.d*0 + Sos.d*477 + Last.12.d*-1.682 + W.vs.50.d*0 + W50.d*-1.148 + L50.d*-0.5032 + L.vs.150.d*0 + W150.d*0.5354 + L150.d*2.203 + Streak.d*-0.2249 + History.d*0.001246 + Seed.d*-0.2949 + 2.473)
+
+top.rank <- c(1:8)
+top <- c(1:8)
+top.spr <- c(1:8)
+bot.rank <- c(1:8)
+bot <- c(1:8)
+bot.spr <- c(1:8)
+for(i in c(1:8)){
+  top.rank[i] <- s16[i*2-1,1]
+  top[i] <- as.character(s16[i*2-1,2])
+  top.spr[i] <- -s16_diff[i,25]
+  bot.rank[i] <- s16[i*2,1]
+  bot[i] <- as.character(s16[i*2,2])
+  bot.spr[i] <- s16_diff[i,25]
+}
+
+
+cat(sprintf("#%2i %17s: %6.2f  |  #%2i %17s: %6.2f\n",top.rank,top,top.spr,bot.rank,bot,bot.spr))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
