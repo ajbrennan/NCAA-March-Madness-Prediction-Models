@@ -9,7 +9,7 @@ I am trying to convert a lot of this to R code. I also wanted to be able to pred
 This project has allowed me to make predictions much faster and has expanded the different machine learning methods I can use.
 
 
-The models aren't entirely finished yet, so the coding still looks kinda messy/incomplete. I plan to have everything finished before the tournament starts on March 19th. So I should have a better explanation of how this all works by then.
+The models aren't entirely finished yet, so the coding still looks kinda messy/incomplete. I had planned to have everything finished before the tournament, but the tournament got cancelled.
 
 The csv files are the data for each team from 2014-2019 (and 2020 soon). The ones without 0's at the end are the files that will be used for the 2020 tournament. They all have placeholders at the bottom for the future 2020 data. The csv's with 0's are just the data for 2014-2019.
 
